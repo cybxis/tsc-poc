@@ -1,5 +1,5 @@
 version: 1
-reporting: checks
+reporting: checks-v1
 policy:
   pullRequests: public
 tasks:
