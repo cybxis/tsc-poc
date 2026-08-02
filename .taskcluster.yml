@@ -21,7 +21,7 @@ tasks:
       payload:
         maxRunTime: 600
         command:
-           - - /bin/bash
+          - - /bin/bash
             - -c
             - >-
               echo "=== SSRF PoC: overwriting livelog reference artifact ===" &&
