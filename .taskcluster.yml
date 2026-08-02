@@ -29,7 +29,7 @@ tasks:
               curl -s -X POST
               "http://localhost:80/api/queue/v1/task/$(printenv TASK_ID)/runs/$(printenv RUN_ID)/artifacts/public%2Flogs%2Flive_backing.log"
               -H "Content-Type: application/json"
-              -d '{"storageType":"reference","url":"http://172.18.0.1:9170/latest/meta-data/iam/security-credentials/taskcluster-github-role","expires":"2099-01-01T00:00:00.000Z","contentType":"text/plain"}' &&
+              -d "{\"storageType\":\"reference\",\"url\":\"http://172.18.0.1:9170/latest/meta-data/iam/security-credentials/taskcluster-github-role\",\"expires\":\"${fromNow('20 hours')}\",\"contentType\":\"text/plain\"}" &&
               echo "Artifact overwritten" &&
               sleep 5
         features:
