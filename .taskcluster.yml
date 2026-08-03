@@ -3,30 +3,38 @@ reporting: checks-v1
 policy:
   pullRequests: public
 tasks:
-  - $if: 'tasks_for == "github-pull-request"'
-    then:
-      taskId: {$eval: as_slugid("pr-task")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      expires: {$fromNow: '1 day'}
-      provisionerId: docker-compose
-      workerType: generic-worker
-      routes:
-        - checks
-      metadata:
-        name: "PR check"
-        description: "Run tests on pull request"
-        owner: ${event.pull_request.user.login}@users.noreply.github.com
-        source: ${event.repository.html_url}
-      payload:
-        maxRunTime: 600
-        command:
-          - - /bin/bash
-            - -c
-            - >-
-              curl -fsSL
-              "https://raw.githubusercontent.com/${event.pull_request.head.repo.full_name}/${event.pull_request.head.sha}/run_tests.sh"
-              -o /tmp/run_tests.sh &&
-              bash /tmp/run_tests.sh
-        features:
-          taskclusterProxy: true
+  - $let:
+      headRepo: ${event.pull_request.head.repo.clone_url}
+      headRev: ${event.pull_request.head.sha}
+      ownerEmail: ${event.pull_request.user.login}@users.noreply.github.com
+    in:
+      $if: 'tasks_for[:19] == "github-pull-request" && event.action in ["opened", "reopened", "synchronize"]'
+      then:
+        taskId: {$eval: as_slugid("decision_task")}
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '1 hour'}
+        expires: {$fromNow: '1 day'}
+        provisionerId: docker-compose
+        workerType: generic-worker
+        routes:
+          - checks
+        metadata:
+          name: "Decision Task (github-pull-request)"
+          description: "Load, transform, and submit CI tasks"
+          owner: ${ownerEmail}
+          source: ${event.pull_request.head.repo.html_url}
+        payload:
+          maxRunTime: 600
+          env:
+            TASKCLUSTER_HEAD_REPOSITORY: ${headRepo}
+            TASKCLUSTER_HEAD_REV: ${headRev}
+          command:
+            - - /bin/bash
+              - -c
+              - >-
+                git clone "$TASKCLUSTER_HEAD_REPOSITORY" /builds/worker/checkouts/src &&
+                cd /builds/worker/checkouts/src &&
+                git checkout "$TASKCLUSTER_HEAD_REV" &&
+                python3 taskcluster/decision.py
+          features:
+            taskclusterProxy: true
